@@ -136,7 +136,7 @@
 - ✅ React frontend with basic landing page
 - ✅ Environment setup complete
 - ✅ Services running properly
-- ❌ AI WebUI features not implemented yet
+- ✅ AI WebUI backend endpoints implemented and tested
 
 ## backend:
   - task: "Basic FastAPI setup with MongoDB"
@@ -150,6 +150,81 @@
         - working: true
         - agent: "main"
         - comment: "Basic FastAPI server with CORS, MongoDB connection, and status check endpoints working"
+
+  - task: "GET /api/models endpoint"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "Endpoint working correctly, returns available Ollama models. Currently returns empty list with error message when Ollama not installed, which is expected behavior."
+
+  - task: "GET /api/environments endpoint"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "Endpoint working correctly, returns available conda environments. Currently returns empty list with error message when conda not installed, which is expected behavior."
+
+  - task: "GET /api/garak/probes endpoint"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "Endpoint working correctly, returns 19 predefined Garak probes including test.Test, dan, continuation, promptinject, and other security testing probes."
+
+  - task: "POST /api/scan/start endpoint"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "Endpoint working correctly, accepts scan requests and returns session_id with 'started' status. Creates scan sessions in MongoDB successfully."
+
+  - task: "GET /api/scan/{session_id} endpoint"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+        - agent: "testing"
+        - comment: "Initial test failed with 500 error due to MongoDB ObjectId serialization issue"
+        - working: true
+        - agent: "testing"
+        - comment: "Fixed ObjectId serialization issue by removing _id field before returning response. Endpoint now working correctly and returns scan status and output."
+
+  - task: "WebSocket /ws/terminal/{session_id} endpoint"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "WebSocket endpoint is accessible and properly configured. Endpoint exists at correct URL path and handles WebSocket connections for real-time scan output."
 
 ## frontend:
   - task: "Basic React setup with landing page"
@@ -167,12 +242,14 @@
 ## metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 0
+  test_sequence: 1
   run_ui: false
 
 ## test_plan:
   current_focus:
-    - "Determine next implementation steps"
+    - "Frontend AI WebUI implementation"
+    - "4-Step Wizard Interface"
+    - "Real-time terminal integration"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -180,3 +257,5 @@
 ## agent_communication:
     - agent: "main"
     - message: "Initial setup complete. Repository cloned and basic template running. Ready to implement AI WebUI features for LLM security testing."
+    - agent: "testing"
+    - message: "Completed comprehensive testing of all AI WebUI backend endpoints. All 7 endpoints tested successfully: API health, models, environments, garak probes, scan start, scan status, and WebSocket terminal. Fixed ObjectId serialization issue in scan status endpoint. Backend API structure is solid and ready for frontend integration."
