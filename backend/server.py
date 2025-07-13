@@ -95,7 +95,7 @@ manager = ConnectionManager()
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "AI WebUI API"}
 
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
@@ -108,6 +108,257 @@ async def create_status_check(input: StatusCheckCreate):
 async def get_status_checks():
     status_checks = await db.status_checks.find().to_list(1000)
     return [StatusCheck(**status_check) for status_check in status_checks]
+
+# AI WebUI Endpoints
+@api_router.get("/models")
+async def get_models():
+    """Get available Ollama models"""
+    try:
+        result = subprocess.run(
+            ["ollama", "list"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        models = []
+        lines = result.stdout.strip().split('\n')[1:]  # Skip header
+        
+        for line in lines:
+            if line.strip():
+                parts = line.split()
+                if len(parts) >= 3:
+                    models.append({
+                        "name": parts[0],
+                        "tag": parts[1] if len(parts) > 1 else "latest",
+                        "size": parts[2] if len(parts) > 2 else "unknown",
+                        "modified": " ".join(parts[3:]) if len(parts) > 3 else "unknown"
+                    })
+        
+        return {"models": models}
+    except subprocess.CalledProcessError:
+        return {"models": [], "error": "Ollama not available"}
+    except Exception as e:
+        return {"models": [], "error": str(e)}
+
+@api_router.get("/environments")
+async def get_environments():
+    """Get available conda environments"""
+    try:
+        result = subprocess.run(
+            ["conda", "env", "list", "--json"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        env_data = json.loads(result.stdout)
+        environments = []
+        
+        for env_path in env_data.get("envs", []):
+            env_name = os.path.basename(env_path)
+            environments.append({
+                "name": env_name,
+                "path": env_path
+            })
+        
+        return {"environments": environments}
+    except subprocess.CalledProcessError:
+        return {"environments": [], "error": "Conda not available"}
+    except Exception as e:
+        return {"environments": [], "error": str(e)}
+
+@api_router.get("/garak/probes")
+async def get_garak_probes():
+    """Get available Garak probes"""
+    # This is a predefined list based on the Garak documentation
+    probes = [
+        "test.Test",
+        "dan.Dan_10_0",
+        "dan.Dan_11_0", 
+        "dan.Dan_6_2",
+        "dan.Dan_7_0",
+        "dan.Dan_8_0",
+        "dan.Dan_9_0",
+        "continuation.ContinueSlursReclaimedSlurs",
+        "continuation.ContinueSlursReclaimedSlursPrefix",
+        "promptinject.PromptInject",
+        "realtoxicityprompts.RealToxicityPrompts",
+        "malwaregen.Malwaregen",
+        "xss.XSS",
+        "latentinjection.LatentInjection",
+        "encoding.InjectBase64",
+        "encoding.InjectHex",
+        "encoding.InjectROT13",
+        "encoding.InjectUnicode",
+        "exploitation.Exploitation"
+    ]
+    
+    return {"probes": probes}
+
+@api_router.post("/scan/start")
+async def start_scan(scan_request: ScanRequest):
+    """Start a vulnerability scan"""
+    try:
+        # Create scan session
+        session = ScanSession(
+            model_name=scan_request.model_name,
+            environment=scan_request.environment,
+            tool=scan_request.tool,
+            probe=scan_request.probe,
+            status="pending"
+        )
+        
+        # Save session to database
+        await db.scan_sessions.insert_one(session.dict())
+        
+        # Start scan asynchronously
+        asyncio.create_task(run_scan(session))
+        
+        return {"session_id": session.id, "status": "started"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/scan/{session_id}")
+async def get_scan_status(session_id: str):
+    """Get scan status and output"""
+    try:
+        session = await db.scan_sessions.find_one({"id": session_id})
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        return session
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def run_scan(session: ScanSession):
+    """Run the actual vulnerability scan"""
+    try:
+        # Update status to running
+        await db.scan_sessions.update_one(
+            {"id": session.id},
+            {"$set": {"status": "running"}}
+        )
+        
+        # Send status update via WebSocket
+        await manager.send_personal_message(
+            json.dumps({"type": "status", "status": "running"}),
+            session.id
+        )
+        
+        # Build command based on tool
+        if session.tool == "garak":
+            command = [
+                "conda", "run", "-n", session.environment,
+                "python", "-m", "garak",
+                "--model_type", "ollama",
+                "--model_name", session.model_name,
+                "--probes", session.probe
+            ]
+        else:
+            raise ValueError(f"Unsupported tool: {session.tool}")
+        
+        # Send command info
+        await manager.send_personal_message(
+            json.dumps({
+                "type": "command",
+                "command": " ".join(command)
+            }),
+            session.id
+        )
+        
+        # Run the command
+        process = await asyncio.create_subprocess_exec(
+            *command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            text=True
+        )
+        
+        output_lines = []
+        
+        # Read output line by line
+        while True:
+            line = await process.stdout.readline()
+            if not line:
+                break
+                
+            line = line.strip()
+            if line:
+                output_lines.append(line)
+                
+                # Send real-time output
+                await manager.send_personal_message(
+                    json.dumps({
+                        "type": "output",
+                        "line": line
+                    }),
+                    session.id
+                )
+        
+        # Wait for process to complete
+        await process.wait()
+        
+        # Update final status
+        final_status = "completed" if process.returncode == 0 else "failed"
+        final_output = "\n".join(output_lines)
+        
+        await db.scan_sessions.update_one(
+            {"id": session.id},
+            {
+                "$set": {
+                    "status": final_status,
+                    "output": final_output,
+                    "completed_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        # Send completion status
+        await manager.send_personal_message(
+            json.dumps({
+                "type": "status",
+                "status": final_status,
+                "output": final_output
+            }),
+            session.id
+        )
+        
+    except Exception as e:
+        # Update error status
+        await db.scan_sessions.update_one(
+            {"id": session.id},
+            {
+                "$set": {
+                    "status": "failed",
+                    "output": str(e),
+                    "completed_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        # Send error status
+        await manager.send_personal_message(
+            json.dumps({
+                "type": "error",
+                "error": str(e)
+            }),
+            session.id
+        )
+
+# WebSocket endpoint for real-time updates
+@app.websocket("/ws/terminal/{session_id}")
+async def websocket_endpoint(websocket: WebSocket, session_id: str):
+    await manager.connect(websocket, session_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            # Handle any incoming WebSocket messages if needed
+            pass
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, session_id)
 
 # Include the router in the main app
 app.include_router(api_router)
