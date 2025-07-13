@@ -93,13 +93,28 @@ const VulnerabilityWizard = () => {
       
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
+        
         if (data.type === 'output') {
+          setScanOutput(prev => [...prev, data.line]);
+        } else if (data.type === 'progress') {
+          // Handle progress bar updates
           setScanOutput(prev => [...prev, data.line]);
         } else if (data.type === 'status') {
           setScanStatus(data.status);
         } else if (data.type === 'command') {
-          setScanOutput(prev => [...prev, `Starting Garak scan... Command: ${data.command}`]);
+          setScanOutput(prev => [...prev, data.command]);
+        } else if (data.type === 'error') {
+          setScanOutput(prev => [...prev, `ERROR: ${data.error}`]);
+          setScanStatus('failed');
         }
+        
+        // Auto-scroll to bottom
+        setTimeout(() => {
+          const terminalDiv = document.querySelector('.bg-black.rounded-lg');
+          if (terminalDiv) {
+            terminalDiv.scrollTop = terminalDiv.scrollHeight;
+          }
+        }, 100);
       };
 
       ws.onclose = () => {
