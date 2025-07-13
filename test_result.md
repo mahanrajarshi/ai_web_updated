@@ -101,3 +101,82 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+## user_problem_statement: Clone and develop an AI WebUI application for security testing of Large Language Models using industry-standard tools Garak and PromptMap. The application should include:
+
+### Core Features Required:
+- 4-Step Wizard Interface for guided vulnerability testing
+- Real-time Terminal Output via WebSocket connections
+- Dual Tool Support: Garak and PromptMap integration
+- Model Management: Automatic Ollama model detection and selection
+- Environment Management: Conda environment integration
+- Report Generation: HTML (Garak) and JSON (PromptMap) report downloads
+- Session Management: Track and resume vulnerability scans
+
+### UI/UX Features:
+- Modern Glassmorphism UI with gradient backgrounds
+- Responsive Design for desktop and mobile devices
+- Step-by-step Wizard with visual progress indicators
+- Error Handling with user-friendly messages
+- Loading States and animations for better UX
+
+### Security Testing Capabilities:
+- 34+ Garak Probe Categories including test.Test, dan, continuation, promptinject, realtoxicityprompts, malwaregen, xss, latentinjection, encoding, exploitation
+- PromptMap Integration for automated prompt injection testing
+- Real-time Scan Monitoring with live terminal output
+- Comprehensive Reporting with detailed vulnerability analysis
+
+### Prerequisites:
+- Ollama for LLM model management
+- Miniconda/Anaconda for Python environment management
+- Node.js (v16+) and Python (3.8+)
+
+## Current Status:
+- ✅ Basic FastAPI backend with MongoDB integration
+- ✅ React frontend with basic landing page
+- ✅ Environment setup complete
+- ✅ Services running properly
+- ❌ AI WebUI features not implemented yet
+
+## backend:
+  - task: "Basic FastAPI setup with MongoDB"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "main"
+        - comment: "Basic FastAPI server with CORS, MongoDB connection, and status check endpoints working"
+
+## frontend:
+  - task: "Basic React setup with landing page"
+    implemented: true
+    working: true
+    file: "App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "main"
+        - comment: "Basic React app with routing, Tailwind CSS, and API integration working"
+
+## metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+## test_plan:
+  current_focus:
+    - "Determine next implementation steps"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+## agent_communication:
+    - agent: "main"
+    - message: "Initial setup complete. Repository cloned and basic template running. Ready to implement AI WebUI features for LLM security testing."
