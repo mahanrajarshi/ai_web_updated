@@ -335,14 +335,96 @@ const VulnerabilityWizard = () => {
 
               {/* Terminal Output */}
               <div className="bg-black rounded-lg p-4 mb-6 min-h-96 max-h-96 overflow-y-auto">
-                <div className="font-mono text-sm text-green-400">
-                  {scanOutput.map((line, index) => (
-                    <div key={index} className="mb-1">{line}</div>
-                  ))}
+                <div className="font-mono text-sm">
+                  {scanOutput.map((line, index) => {
+                    // Parse different types of output for styling
+                    let lineClass = "mb-1 text-gray-300";
+                    let content = line;
+                    
+                    // Garak header info
+                    if (line.includes("garak LLM vulnerability scanner")) {
+                      lineClass = "mb-1 text-blue-400 font-bold";
+                    }
+                    // Logging messages
+                    else if (line.includes("logging to")) {
+                      lineClass = "mb-1 text-yellow-400";
+                      content = `📋 ${line}`;
+                    }
+                    // Loading messages
+                    else if (line.includes("loading") || line.includes("Loading")) {
+                      lineClass = "mb-1 text-cyan-400";
+                      content = `🔄 ${line}`;
+                    }
+                    // Reporting messages
+                    else if (line.includes("reporting to")) {
+                      lineClass = "mb-1 text-purple-400";
+                      content = `📊 ${line}`;
+                    }
+                    // Queue messages
+                    else if (line.includes("queue of probes")) {
+                      lineClass = "mb-1 text-green-400";
+                      content = `🎯 ${line}`;
+                    }
+                    // Progress bars and percentages
+                    else if (line.includes("%") && (line.includes("|") || line.includes("█"))) {
+                      lineClass = "mb-1 text-green-300 bg-gray-800 p-1 rounded";
+                      // Keep original formatting for progress bars
+                    }
+                    // Error messages
+                    else if (line.includes("error") || line.includes("Error") || line.includes("ERROR")) {
+                      lineClass = "mb-1 text-red-400";
+                      content = `❌ ${line}`;
+                    }
+                    // Warning messages
+                    else if (line.includes("warning") || line.includes("Warning") || line.includes("WARN")) {
+                      lineClass = "mb-1 text-orange-400";
+                      content = `⚠️ ${line}`;
+                    }
+                    // Success/completion messages
+                    else if (line.includes("completed") || line.includes("finished") || line.includes("done")) {
+                      lineClass = "mb-1 text-green-400";
+                      content = `✅ ${line}`;
+                    }
+                    // Command execution
+                    else if (line.includes("python -m garak")) {
+                      lineClass = "mb-1 text-blue-300 bg-gray-900 p-2 rounded border-l-4 border-blue-500";
+                      content = `$ ${line}`;
+                    }
+                    
+                    return (
+                      <div key={index} className={lineClass}>
+                        <span style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                          {content}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Scanning indicator */}
                   {scanStatus === 'running' && (
-                    <div className="flex items-center text-yellow-400">
-                      <span className="mr-2">)</span>
-                      <span className="animate-pulse">Scanning...</span>
+                    <div className="flex items-center text-yellow-400 mt-2">
+                      <span className="mr-2">🔄</span>
+                      <span className="animate-pulse">Scanning in progress...</span>
+                      <div className="ml-4 flex space-x-1">
+                        <div className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Completion status */}
+                  {scanStatus === 'completed' && (
+                    <div className="flex items-center text-green-400 mt-2">
+                      <span className="mr-2">✅</span>
+                      <span>Scan completed successfully!</span>
+                    </div>
+                  )}
+                  
+                  {scanStatus === 'failed' && (
+                    <div className="flex items-center text-red-400 mt-2">
+                      <span className="mr-2">❌</span>
+                      <span>Scan failed. Check the output above for details.</span>
                     </div>
                   )}
                 </div>
