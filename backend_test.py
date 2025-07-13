@@ -267,7 +267,7 @@ class AIWebUITester:
             self.test_get_scan_status(session_id)
             
             # Test 7: WebSocket /ws/terminal/{session_id}
-            self.run_websocket_test(session_id)
+            self.test_websocket_endpoint_availability(session_id)
         else:
             self.log_test("GET /api/scan/{session_id}", False, "Skipped due to failed scan start")
             self.log_test("WebSocket /ws/terminal/{session_id}", False, "Skipped due to failed scan start")
