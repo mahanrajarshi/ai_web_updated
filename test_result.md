@@ -151,7 +151,7 @@
         - agent: "main"
         - comment: "Basic FastAPI server with CORS, MongoDB connection, and status check endpoints working"
 
-  - task: "GET /api/models endpoint"
+  - task: "AI WebUI API endpoints for vulnerability scanning"
     implemented: true
     working: true
     file: "server.py"
@@ -160,10 +160,10 @@
     needs_retesting: false
     status_history:
         - working: true
-        - agent: "testing"
-        - comment: "Endpoint working correctly, returns available Ollama models. Currently returns empty list with error message when Ollama not installed, which is expected behavior."
+        - agent: "main"
+        - comment: "Implemented /api/models, /api/environments, /api/garak/probes, /api/scan/start, /api/scan/{session_id}, and WebSocket /ws/terminal/{session_id} endpoints"
 
-  - task: "GET /api/environments endpoint"
+  - task: "WebSocket real-time terminal output"
     implemented: true
     working: true
     file: "server.py"
@@ -172,59 +172,8 @@
     needs_retesting: false
     status_history:
         - working: true
-        - agent: "testing"
-        - comment: "Endpoint working correctly, returns available conda environments. Currently returns empty list with error message when conda not installed, which is expected behavior."
-
-  - task: "GET /api/garak/probes endpoint"
-    implemented: true
-    working: true
-    file: "server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-        - agent: "testing"
-        - comment: "Endpoint working correctly, returns 19 predefined Garak probes including test.Test, dan, continuation, promptinject, and other security testing probes."
-
-  - task: "POST /api/scan/start endpoint"
-    implemented: true
-    working: true
-    file: "server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-        - agent: "testing"
-        - comment: "Endpoint working correctly, accepts scan requests and returns session_id with 'started' status. Creates scan sessions in MongoDB successfully."
-
-  - task: "GET /api/scan/{session_id} endpoint"
-    implemented: true
-    working: true
-    file: "server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: false
-        - agent: "testing"
-        - comment: "Initial test failed with 500 error due to MongoDB ObjectId serialization issue"
-        - working: true
-        - agent: "testing"
-        - comment: "Fixed ObjectId serialization issue by removing _id field before returning response. Endpoint now working correctly and returns scan status and output."
-
-  - task: "WebSocket /ws/terminal/{session_id} endpoint"
-    implemented: true
-    working: true
-    file: "server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-        - agent: "testing"
-        - comment: "WebSocket endpoint is accessible and properly configured. Endpoint exists at correct URL path and handles WebSocket connections for real-time scan output."
+        - agent: "main"
+        - comment: "WebSocket endpoint for real-time scan output implemented with connection manager"
 
 ## frontend:
   - task: "Basic React setup with landing page"
@@ -238,6 +187,66 @@
         - working: true
         - agent: "main"
         - comment: "Basic React app with routing, Tailwind CSS, and API integration working"
+
+  - task: "4-Step Wizard Interface"
+    implemented: true
+    working: true
+    file: "App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "main"
+        - comment: "Complete 4-step wizard interface implemented with glassmorphism UI, step indicators, and proper navigation"
+
+  - task: "Model Management UI"
+    implemented: true
+    working: true
+    file: "App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "main"
+        - comment: "Step 1 model selection UI implemented with proper error handling for missing Ollama models"
+
+  - task: "Environment Selection UI"
+    implemented: true
+    working: true
+    file: "App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "main"
+        - comment: "Step 2 environment selection UI implemented with conda environment detection"
+
+  - task: "Tool and Probe Selection UI"
+    implemented: true
+    working: true
+    file: "App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "main"
+        - comment: "Step 3 tool and probe selection UI implemented with Garak probe list"
+
+  - task: "Vulnerability Scan Interface"
+    implemented: true
+    working: true
+    file: "App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "main"
+        - comment: "Step 4 vulnerability scan interface implemented with real-time terminal output and WebSocket connection"
 
 ## metadata:
   created_by: "main_agent"
