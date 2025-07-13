@@ -264,43 +264,75 @@ async def run_scan(session: ScanSession):
         else:
             raise ValueError(f"Unsupported tool: {session.tool}")
         
-        # Send command info
+        # Send command info with full command
+        command_str = " ".join(command)
         await manager.send_personal_message(
             json.dumps({
                 "type": "command",
-                "command": " ".join(command)
+                "command": command_str
             }),
             session.id
         )
         
-        # Run the command
+        # Send initial garak info
+        await manager.send_personal_message(
+            json.dumps({
+                "type": "output",
+                "line": f"garak LLM vulnerability scanner v0.12.0 ( https://github.com/NVIDIA/garak ) at {datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]}"
+            }),
+            session.id
+        )
+        
+        # Create the process with unbuffered output
         process = await asyncio.create_subprocess_exec(
             *command,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
-            text=True
+            text=True,
+            env={**os.environ, "PYTHONUNBUFFERED": "1"}  # Force unbuffered output
         )
         
         output_lines = []
         
-        # Read output line by line
+        # Read output character by character to get real-time updates
         while True:
-            line = await process.stdout.readline()
-            if not line:
+            try:
+                # Read line by line but with timeout
+                line_bytes = await asyncio.wait_for(process.stdout.readline(), timeout=1.0)
+                if not line_bytes:
+                    break
+                    
+                line = line_bytes.rstrip('\n\r')
+                if line:
+                    output_lines.append(line)
+                    
+                    # Send real-time output immediately
+                    await manager.send_personal_message(
+                        json.dumps({
+                            "type": "output",
+                            "line": line
+                        }),
+                        session.id
+                    )
+                    
+                    # Also send any special formatting for progress bars
+                    if "%" in line and ("|" in line or "█" in line):
+                        await manager.send_personal_message(
+                            json.dumps({
+                                "type": "progress",
+                                "line": line
+                            }),
+                            session.id
+                        )
+                        
+            except asyncio.TimeoutError:
+                # Check if process is still running
+                if process.returncode is not None:
+                    break
+                continue
+            except Exception as e:
+                logger.error(f"Error reading output: {e}")
                 break
-                
-            line = line.strip()
-            if line:
-                output_lines.append(line)
-                
-                # Send real-time output
-                await manager.send_personal_message(
-                    json.dumps({
-                        "type": "output",
-                        "line": line
-                    }),
-                    session.id
-                )
         
         # Wait for process to complete
         await process.wait()
