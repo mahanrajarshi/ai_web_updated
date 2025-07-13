@@ -208,7 +208,8 @@ class AIWebUITester:
             # Convert HTTPS URL to WSS for WebSocket
             ws_url = self.base_url.replace("https://", "wss://").replace("/api", "") + f"/ws/terminal/{session_id}"
             
-            async with websockets.connect(ws_url, timeout=10) as websocket:
+            # Use connect with proper timeout handling
+            async with websockets.connect(ws_url) as websocket:
                 # Try to receive a message within 5 seconds
                 try:
                     message = await asyncio.wait_for(websocket.recv(), timeout=5.0)
