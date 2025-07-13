@@ -38,6 +38,60 @@ class StatusCheck(BaseModel):
 class StatusCheckCreate(BaseModel):
     client_name: str
 
+# AI WebUI Models
+class ScanRequest(BaseModel):
+    model_name: str
+    environment: str
+    tool: str
+    probe: str
+    session_id: Optional[str] = None
+
+class ScanSession(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    model_name: str
+    environment: str
+    tool: str
+    probe: str
+    status: str = "pending"  # pending, running, completed, failed
+    output: str = ""
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    completed_at: Optional[datetime] = None
+
+class ModelInfo(BaseModel):
+    name: str
+    tag: str
+    size: str
+    modified: str
+
+# WebSocket connection manager
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+        self.session_connections: dict = {}
+
+    async def connect(self, websocket: WebSocket, session_id: str):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+        if session_id not in self.session_connections:
+            self.session_connections[session_id] = []
+        self.session_connections[session_id].append(websocket)
+
+    def disconnect(self, websocket: WebSocket, session_id: str):
+        self.active_connections.remove(websocket)
+        if session_id in self.session_connections:
+            if websocket in self.session_connections[session_id]:
+                self.session_connections[session_id].remove(websocket)
+
+    async def send_personal_message(self, message: str, session_id: str):
+        if session_id in self.session_connections:
+            for connection in self.session_connections[session_id]:
+                try:
+                    await connection.send_text(message)
+                except:
+                    pass
+
+manager = ConnectionManager()
+
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
