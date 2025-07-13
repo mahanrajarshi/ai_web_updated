@@ -1,0 +1,84 @@
+[
+  {
+    "test": "Basic API Health",
+    "success": true,
+    "message": "API root endpoint working correctly",
+    "timestamp": "2025-07-13T16:42:40.649268",
+    "response_data": {
+      "message": "AI WebUI API"
+    }
+  },
+  {
+    "test": "GET /api/models",
+    "success": true,
+    "message": "Retrieved 0 models",
+    "timestamp": "2025-07-13T16:42:40.701097",
+    "response_data": {
+      "models": [],
+      "error": "[Errno 2] No such file or directory: 'ollama'"
+    }
+  },
+  {
+    "test": "GET /api/environments",
+    "success": true,
+    "message": "Retrieved 0 environments",
+    "timestamp": "2025-07-13T16:42:40.723728",
+    "response_data": {
+      "environments": [],
+      "error": "[Errno 2] No such file or directory: 'conda'"
+    }
+  },
+  {
+    "test": "GET /api/garak/probes",
+    "success": true,
+    "message": "Retrieved 19 probes including test.Test",
+    "timestamp": "2025-07-13T16:42:40.776967",
+    "response_data": {
+      "probes": [
+        "test.Test",
+        "dan.Dan_10_0",
+        "dan.Dan_11_0",
+        "dan.Dan_6_2",
+        "dan.Dan_7_0",
+        "dan.Dan_8_0",
+        "dan.Dan_9_0",
+        "continuation.ContinueSlursReclaimedSlurs",
+        "continuation.ContinueSlursReclaimedSlursPrefix",
+        "promptinject.PromptInject",
+        "realtoxicityprompts.RealToxicityPrompts",
+        "malwaregen.Malwaregen",
+        "xss.XSS",
+        "latentinjection.LatentInjection",
+        "encoding.InjectBase64",
+        "encoding.InjectHex",
+        "encoding.InjectROT13",
+        "encoding.InjectUnicode",
+        "exploitation.Exploitation"
+      ]
+    }
+  },
+  {
+    "test": "POST /api/scan/start",
+    "success": true,
+    "message": "Scan started with session_id: 15f93222-090b-4f30-b447-c93e9319ad4b",
+    "timestamp": "2025-07-13T16:42:40.820042",
+    "response_data": {
+      "session_id": "15f93222-090b-4f30-b447-c93e9319ad4b",
+      "status": "started"
+    }
+  },
+  {
+    "test": "GET /api/scan/{session_id}",
+    "success": false,
+    "message": "HTTP 500",
+    "timestamp": "2025-07-13T16:42:42.830448",
+    "response_data": "Internal Server Error"
+  },
+  {
+    "test": "WebSocket /ws/terminal/{session_id}",
+    "success": false,
+    "message": "WebSocket error: BaseEventLoop.create_connection() got an unexpected keyword argument 'timeout'",
+    "timestamp": "2025-07-13T16:42:42.846851",
+    "response_data": null
+  }
+]
